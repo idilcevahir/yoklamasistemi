@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGR 4451 - Konum Tabanlı E-Yoklama</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap');
+        
+        * {
+            font-family: 'Google Sans', 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #1f1f1f;
+            color: #e3e3e3;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .course-title {
+            font-size: 56px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #8ab4f8 0%, #c58af9 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        
+        .course-subtitle {
+            font-size: 20px;
+            color: #9aa0a6;
+        }
+        
+        .card {
+            background: #2b2b2b;
+            border-radius: 24px;
+            padding: 40px;
+            border: 1px solid #3d3d3d;
+        }
+        
+        .input-field {
+            background: #383838;
+            border: 1px solid #5f6368;
+            border-radius: 12px;
+            padding: 16px 20px;
+            color: #e3e3e3;
+            width: 100%;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: #8ab4f8;
+            background: #3d3d3d;
+        }
+        
+        .input-field::placeholder {
+            color: #9aa0a6;
+        }
+        
+        .btn-primary {
+            background: #8ab4f8;
+            color: #1f1f1f;
+            border: none;
+            border-radius: 24px;
+            padding: 16px 40px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        
+        .btn-primary:hover {
+            background: #aac8f9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(138, 180, 248, 0.5);
+        }
+
+        .btn-primary:disabled {
+            background: #5f6368;
+            color: #9aa0a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .qr-container {
+            background: white;
+            padding: 40px;
+            border-radius: 32px;
+            display: inline-block;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+        }
+        
+        .countdown-badge {
+            background: linear-gradient(135deg, #8ab4f8 0%, #c58af9 100%);
+            color: #1f1f1f;
+            padding: 12px 28px;
+            border-radius: 24px;
+            font-size: 18px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .pass-badge {
+            background: #34a853;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .fail-badge {
+            background: #ea4335;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: #383838;
+            padding: 16px;
+            text-align: left;
+            color: #8ab4f8;
+            font-weight: 600;
+            border-bottom: 2px solid #5f6368;
+        }
+        
+        td {
+            padding: 16px;
+            border-bottom: 1px solid #3d3d3d;
+        }
+        
+        tr:hover {
+            background: #2b2b2b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="teacherLogin">
+            <div class="header">
+                <div class="course-title">ENGR 4451</div>
+                <div class="course-subtitle">Öğretmen Girişi</div>
+            </div>
+            <div class="card" style="max-width: 500px; margin: 0 auto;">
+                <div style="margin-bottom: 24px;">
+                    <label style="display: block; margin-bottom: 8px; color: #9aa0a6; font-size: 14px;">Kullanıcı Adı</label>
+                    <input type="text" id="teacherUsername" class="input-field" placeholder="Kullanıcı adınızı girin">
+                </div>
+                <div style="margin-bottom: 30px;">
+                    <label style="display: block; margin-bottom: 8px; color: #9aa0a6; font-size: 14px;">Şifre</label>
+                    <input type="password" id="teacherPassword" class="input-field" placeholder="Şifrenizi girin">
+                </div>
+                <button class="btn-primary" onclick="teacherLogin()">Giriş Yap</button>
+            </div>
+        </div>
+
+        <div id="teacherPanel" class="hidden">
+            <div class="header">
+                <div class="course-title">Yoklama Paneli</div>
+                <div class="course-subtitle">Seçili hafta için yoklama oturumu başlatın</div>
+            </div>
+
+            <div class="card" style="margin-bottom: 30px;">
+                <div style="display: flex; gap: 20px; align-items: flex-end;">
+                    <div style="flex: 1;">
+                        <label style="display: block; margin-bottom: 8px; color: #9aa0a6; font-size: 14px;">Hafta Seçin</label>
+                        <select id="weekSelector" class="input-field"></select>
+                    </div>
+                    <button id="sessionBtn" class="btn-primary" onclick="toggleSession()" style="width: auto; padding: 16px 48px;">
+                        🚀 Oturumu Başlat
+                    </button>
+                </div>
+            </div>
+
+            <div id="qrSection" class="hidden">
+                <div style="text-align: center; margin-bottom: 40px;">
+                    <div class="qr-container">
+                        <div id="qrcode"></div>
+                    </div>
+                    <div class="countdown-badge">
+                        ⏱️ Kalan Süre: <span id="sessionCountdown">15:00</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 24px;">📊 Devam Durumu Raporu</h3>
+                    <div id="reportContent"></div>
+                    <button class="btn-primary" onclick="exportToCSV()" style="margin-top: 20px; width: auto; padding: 12px 32px;">
+                        📥 CSV İndir
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="studentLogin" class="hidden">
+            <div class="header">
+                <div class="course-title">Öğrenci Girişi</div>
+                <div class="course-subtitle">Hafta <span id="weekInfo"></span> için yoklama alınıyor</div>
+            </div>
+
+            <div class="card" style="max-width: 500px; margin: 0 auto;">
+                <div style="margin-bottom: 24px;">
+                    <label style="display: block; margin-bottom: 8px; color: #9aa0a6; font-size: 14px;">Ad Soyad (Kullanıcı Adı)</label>
+                    <input type="text" id="studentName" class="input-field" placeholder="Adınızı ve soyadınızı girin">
+                </div>
+
+                <div style="margin-bottom: 30px;">
+                    <label style="display: block; margin-bottom: 8px; color: #9aa0a6; font-size: 14px;">Okul Numarası (Şifre)</label>
+                    <input type="password" id="studentNumber" class="input-field" placeholder="Okul numaranızı girin">
+                </div>
+
+                <button id="submitAttendanceBtn" class="btn-primary" onclick="submitAttendance()">✅ Yoklamayı Onayla</button>
+
+                <div id="attendanceResult" class="hidden" style="margin-top: 24px; padding: 20px; border-radius: 16px; text-align: center; font-weight: 600; font-size: 16px;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const TEACHER_USERNAME = 'orkun Karabaşoğlu';
+        const TEACHER_PASSWORD = 'orkun.karabasoglu';
+        const MAX_WEEKS = 14;
+        const PASS_PERCENTAGE = 70;
+        const SESSION_DURATION_MINUTES = 15;
+
+        const YASAR_UNIVERSITY_COORDS = { latitude: 38.4313, longitude: 27.2081 };
+        const MAX_DISTANCE_METERS = 500;
+
+        const STUDENT_DATABASE = {
+            'Ayşegül Karınyarıcı': '22070003022',
+            'Mehmet Yılmaz': '21050001011',
+            'Zeynep Kaya': '22060002033',
+            'Mustafa Demir': '20070003044',
+            'Elif Şahin': '23040004055'
+        };
+
+        let sessionTimer = null;
+        let reportUpdateTimer = null;
+        let attendanceData = {};
+
+        function hideAllScreens() {
+            ['teacherLogin', 'teacherPanel', 'studentLogin'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+        }
+
+        function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
+            const R = 6371e3;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function verifyLocation() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject('Tarayıcınız konum servisini desteklemiyor.');
+                    return;
+                }
+                navigator.geolocation.getCurrentPosition(
+                    position => {
+                        const userLat = position.coords.latitude;
+                        const userLon = position.coords.longitude;
+                        const distance = getDistanceFromLatLonInMeters(
+                            userLat, userLon,
+                            YASAR_UNIVERSITY_COORDS.latitude, YASAR_UNIVERSITY_COORDS.longitude
+                        );
+                        
+                        if (distance <= MAX_DISTANCE_METERS) {
+                            resolve();
+                        } else {
+                            reject(`Kampüs dışında olduğunuz için yoklama alınamadı. (Uzaklık: ${distance.toFixed(0)}m)`);
+                        }
+                    },
+                    () => {
+                        reject('Konum bilgisi alınamadı. Lütfen tarayıcınızdan konum izni verdiğinizden emin olun.');
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            });
+        }
+
+        function teacherLogin() {
+            const username = document.getElementById('teacherUsername').value;
+            const password = document.getElementById('teacherPassword').value;
+            
+            if (username === TEACHER_USERNAME && password === TEACHER_PASSWORD) {
+                hideAllScreens();
+                document.getElementById('teacherPanel').classList.remove('hidden');
+                initTeacherPanel();
+            } else {
+                alert('❌ Hatalı kullanıcı adı veya şifre!');
+            }
+        }
+
+        function initTeacherPanel() {
+            const selector = document.getElementById('weekSelector');
+            selector.innerHTML = '';
+            for (let i = 1; i <= MAX_WEEKS; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `Hafta ${i}`;
+                selector.appendChild(option);
+            }
+        }
+
+        function toggleSession() {
+            const sessionBtn = document.getElementById('sessionBtn');
+            if (sessionBtn.dataset.active === 'true') {
+                stopSession();
+            } else {
+                startSession();
+            }
+        }
+
+        function startSession() {
+            const week = document.getElementById('weekSelector').value;
+            const sessionStartTime = Date.now();
+
+            const qrData = `${window.location.href.split('?')[0]}?week=${week}&session=${sessionStartTime}`;
+            
+            document.getElementById('qrcode').innerHTML = '';
+            new QRCode(document.getElementById('qrcode'), {
+                text: qrData,
+                width: 300,
+                height: 300
+            });
+
+            document.getElementById('qrSection').classList.remove('hidden');
+            const sessionBtn = document.getElementById('sessionBtn');
+            sessionBtn.textContent = '⏹️ Oturumu Durdur';
+            sessionBtn.style.background = '#ea4335';
+            sessionBtn.dataset.active = 'true';
+            document.getElementById('weekSelector').disabled = true;
+
+            const endTime = sessionStartTime + SESSION_DURATION_MINUTES * 60 * 1000;
+            sessionTimer = setInterval(() => {
+                const now = Date.now();
+                const remaining = endTime - now;
+                if (remaining <= 0) {
+                    stopSession();
+                } else {
+                    const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+                    document.getElementById('sessionCountdown').textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }
+            }, 1000);
+            
+            generateReport();
+            reportUpdateTimer = setInterval(generateReport, 5000);
+        }
+
+        function stopSession() {
+            clearInterval(sessionTimer);
+            clearInterval(reportUpdateTimer);
+            
+            document.getElementById('qrSection').classList.add('hidden');
+            document.getElementById('qrcode').innerHTML = '';
+            
+            const sessionBtn = document.getElementById('sessionBtn');
+            sessionBtn.textContent = '🚀 Oturumu Başlat';
+            sessionBtn.style.background = '#8ab4f8';
+            sessionBtn.dataset.active = 'false';
+            document.getElementById('weekSelector').disabled = false;
+        }
+
+        async function submitAttendance() {
+            const name = document.getElementById('studentName').value.trim();
+            const number = document.getElementById('studentNumber').value.trim();
+            const urlParams = new URLSearchParams(window.location.search);
+            const week = urlParams.get('week');
+            const session = urlParams.get('session');
+
+            const submitBtn = document.getElementById('submitAttendanceBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'DOĞRULANIYOR...';
+
+            if (!name || !number) {
+                showResult('⚠️ Lütfen tüm alanları doldurun!', 'fail');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '✅ Yoklamayı Onayla';
+                return;
+            }
+
+            const sessionStartTime = parseInt(session, 10);
+            const sessionEndTime = sessionStartTime + SESSION_DURATION_MINUTES * 60 * 1000;
+            if (Date.now() > sessionEndTime) {
+                showResult('❌ Oturum süresi dolduğu için yoklama alınamadı.', 'fail');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '✅ Yoklamayı Onayla';
+                return;
+            }
+            
+            try {
+                showResult('📍 Konumunuz doğrulanıyor, lütfen bekleyin...', 'info');
+                await verifyLocation();
+
+                showResult('👤 Bilgileriniz kontrol ediliyor...', 'info');
+                if (STUDENT_DATABASE[name] !== number) {
+                    throw new Error('Kullanıcı adı (Ad Soyad) veya şifre (Okul No) hatalı.');
+                }
+
+                const weekKey = `week${week}`;
+                if (!attendanceData[weekKey]) attendanceData[weekKey] = [];
+
+                if (attendanceData[weekKey].some(s => s.number === number)) {
+                    throw new Error('Bu hafta için zaten yoklama kaydınız bulunmaktadır.');
+                }
+                
+                attendanceData[weekKey].push({ name, number, timestamp: Date.now() });
+                showResult(`✅ ${name}, Hafta ${week} yoklamanız başarıyla alındı!`, 'success');
+                submitBtn.textContent = 'BAŞARILI';
+
+            } catch (error) {
+                showResult(`❌ Hata: ${error.message || error}`, 'fail');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '✅ Yoklamayı Onayla';
+            }
+        }
+
+        function showResult(message, type) {
+            const resultEl = document.getElementById('attendanceResult');
+            resultEl.textContent = message;
+            resultEl.classList.remove('hidden');
+
+            const colors = {
+                success: '#34a853',
+                fail: '#ea4335',
+                info: '#5f6368'
+            };
+            resultEl.style.background = colors[type] || colors.info;
+            resultEl.style.color = 'white';
+        }
+
+        function generateReport() {
+            const students = {};
+            
+            Object.values(STUDENT_DATABASE).forEach(number => {
+                 const name = Object.keys(STUDENT_DATABASE).find(key => STUDENT_DATABASE[key] === number);
+                 students[number] = { name, weeks: [] };
+            });
+
+            for (let i = 1; i <= MAX_WEEKS; i++) {
+                const weekData = attendanceData[`week${i}`] || [];
+                weekData.forEach(s => {
+                    if (students[s.number]) {
+                        students[s.number].weeks.push(i);
+                    }
+                });
+            }
+            
+            let html = '<table><thead><tr><th>Öğrenci No</th><th>Ad Soyad</th><th>Katılım</th><th>Oran</th><th>Durum</th></tr></thead><tbody>';
+            
+            Object.entries(students).forEach(([number, info]) => {
+                const attendance = info.weeks.length;
+                const percentage = ((attendance / MAX_WEEKS) * 100).toFixed(1);
+                const passed = percentage >= PASS_PERCENTAGE;
+                
+                html += `<tr>
+                    <td style="font-family: monospace;">${number}</td>
+                    <td>${info.name}</td>
+                    <td>${attendance}/${MAX_WEEKS}</td>
+                    <td><strong>${percentage}%</strong></td>
+                    <td>${passed ? '<span class="pass-badge">✓ Geçti</span>' : '<span class="fail-badge">✗ Kaldı</span>'}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            
+            document.getElementById('reportContent').innerHTML = html;
+        }
+
+        function exportToCSV() {
+            const reportTable = document.querySelector("#reportContent table");
+            if(!reportTable) return;
+
+            let csv = [];
+            const rows = reportTable.querySelectorAll("tr");
+            
+            for (const row of rows) {
+                const cols = row.querySelectorAll("td, th");
+                const rowData = [];
+                for (const col of cols) {
+                    rowData.push('"' + col.innerText.replace(/"/g, '""') + '"');
+                }
+                csv.push(rowData.join(","));
+            }
+
+            const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + csv.join("\n");
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", `yoklama_raporu_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+        	link.click();
+            document.body.removeChild(link);
+        }
+
+        window.onload = () => {
+            hideAllScreens();
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            if (urlParams.has('week') && urlParams.has('session')) {
+                document.getElementById('studentLogin').classList.remove('hidden');
+                document.getElementById('weekInfo').textContent = urlParams.get('week');
+            } else {
+                document.getElementById('teacherLogin').classList.remove('hidden');
+            }
+        };
+    </script>
+</body>
+</html>
