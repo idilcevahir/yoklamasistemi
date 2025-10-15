@@ -167,10 +167,64 @@
         tr:hover {
             background: #2b2b2b;
         }
+
+        .qr-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .qr-card {
+            background: #2b2b2b;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            border: 2px solid #3d3d3d;
+            transition: all 0.3s;
+        }
+
+        .qr-card:hover {
+            border-color: #8ab4f8;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(138, 180, 248, 0.3);
+        }
+
+        .qr-card h3 {
+            color: #8ab4f8;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .qr-card .qr-wrapper {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .qr-card .download-btn {
+            background: #383838;
+            color: #e3e3e3;
+            border: 1px solid #5f6368;
+            border-radius: 12px;
+            padding: 10px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+
+        .qr-card .download-btn:hover {
+            background: #444;
+            border-color: #8ab4f8;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- ÖĞRETMEN GİRİŞ EKRANI -->
         <div id="teacherLogin">
             <div class="header">
                 <div class="course-title">ENGR 4451</div>
@@ -189,58 +243,60 @@
             </div>
         </div>
 
+        <!-- ÖĞRETMEN PANELİ -->
         <div id="teacherPanel" class="hidden">
             <div class="header">
-                <div class="course-title">Yoklama Paneli</div>
-                <div class="course-subtitle">Seçili hafta için yoklama oturumu başlatın</div>
+                <div class="course-title">QR Kod Yönetimi</div>
+                <div class="course-subtitle">Her hafta için ayrı QR kodlar</div>
             </div>
 
-            <div class="card" style="margin-bottom: 30px;">
-                <div style="display: flex; gap: 20px; align-items: flex-end;">
-                    <div style="flex: 1;">
-                        <label style="display: block; margin-bottom: 8px; color: #9aa0a6; font-size: 14px;">Hafta Seçin</label>
-                        <select id="weekSelector" class="input-field"></select>
-                    </div>
-                    <button id="sessionBtn" class="btn-primary" onclick="toggleSession()" style="width: auto; padding: 16px 48px;">
-                        🚀 Oturumu Başlat
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                    <h3 style="font-size: 24px; font-weight: 600;">📱 14 Haftalık QR Kodlar</h3>
+                    <button class="btn-primary" onclick="viewReport()" style="width: auto; padding: 12px 32px;">
+                        📊 Raporu Görüntüle
                     </button>
                 </div>
-            </div>
 
-            <div id="qrSection" class="hidden">
-                <div style="text-align: center; margin-bottom: 40px;">
-                    <div class="qr-container">
-                        <div id="qrcode"></div>
-                    </div>
-                    <div class="countdown-badge">
-                        ⏱️ Kalan Süre: <span id="sessionCountdown">15:00</span>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <h3 style="font-size: 24px; font-weight: 600; margin-bottom: 24px;">📊 Devam Durumu Raporu</h3>
-                    <div id="reportContent"></div>
-                    <button class="btn-primary" onclick="exportToCSV()" style="margin-top: 20px; width: auto; padding: 12px 32px;">
-                        📥 CSV İndir
-                    </button>
-                </div>
+                <div class="qr-grid" id="qrGrid"></div>
             </div>
         </div>
 
+        <!-- RAPOR EKRANI -->
+        <div id="reportScreen" class="hidden">
+            <div class="header">
+                <div class="course-title">Devam Raporu</div>
+                <div class="course-subtitle">Tüm haftalar için yoklama durumu</div>
+            </div>
+
+            <div class="card">
+                <button class="btn-primary" onclick="backToPanel()" style="width: auto; padding: 12px 32px; margin-bottom: 30px;">
+                    ← Geri Dön
+                </button>
+
+                <div id="reportContent"></div>
+                
+                <button class="btn-primary" onclick="exportToCSV()" style="margin-top: 20px; width: auto; padding: 12px 32px;">
+                    📥 CSV İndir
+                </button>
+            </div>
+        </div>
+
+        <!-- ÖĞRENCİ GİRİŞ EKRANI -->
         <div id="studentLogin" class="hidden">
             <div class="header">
-                <div class="course-title">Öğrenci Girişi</div>
-                <div class="course-subtitle">Hafta <span id="weekInfo"></span> için yoklama alınıyor</div>
+                <div class="course-title">Hafta <span id="weekInfo"></span></div>
+                <div class="course-subtitle">Yoklama Kaydı</div>
             </div>
 
             <div class="card" style="max-width: 500px; margin: 0 auto;">
                 <div style="margin-bottom: 24px;">
-                    <label style="display: block; margin-bottom: 8px; color: #9aa0a6; font-size: 14px;">Ad Soyad (Kullanıcı Adı)</label>
+                    <label style="display: block; margin-bottom: 8px; color: #9aa0a6; font-size: 14px;">Ad Soyad</label>
                     <input type="text" id="studentName" class="input-field" placeholder="Adınızı ve soyadınızı girin">
                 </div>
 
                 <div style="margin-bottom: 30px;">
-                    <label style="display: block; margin-bottom: 8px; color: #9aa0a6; font-size: 14px;">Okul Numarası (Şifre)</label>
+                    <label style="display: block; margin-bottom: 8px; color: #9aa0a6; font-size: 14px;">Okul Numarası</label>
                     <input type="password" id="studentNumber" class="input-field" placeholder="Okul numaranızı girin">
                 </div>
 
@@ -257,25 +313,59 @@
         const TEACHER_PASSWORD = 'orkun.karabasoglu';
         const MAX_WEEKS = 14;
         const PASS_PERCENTAGE = 70;
-        const SESSION_DURATION_MINUTES = 15;
 
         const YASAR_UNIVERSITY_COORDS = { latitude: 38.4313, longitude: 27.2081 };
         const MAX_DISTANCE_METERS = 500;
 
         const STUDENT_DATABASE = {
-            'Ayşegül Karınyarıcı': '22070003022',
-            'Mehmet Yılmaz': '21050001011',
-            'Zeynep Kaya': '22060002033',
-            'Mustafa Demir': '20070003044',
-            'Elif Şahin': '23040004055'
+            'İBRAHİM GÜLTEKİN': '18070003013',
+            'ELİF EMİNE GÜNAL': '19070001053',
+            'ERK YANKI URAL': '19070008012',
+            'ERCE ÖZKAN': '20070001057',
+            'İPEK ATİŞ': '20070002048',
+            'İDİL ECE CEVAHİR': '20070007004',
+            'SUDE ONFİDAN': '20070008016',
+            'ÖMER ARICA': '20070008017',
+            'SELİM MERT KIRCAALILI': '20070008019',
+            'BERİL DERAN GÜRBÜZ': '20070008029',
+            'ALİ HAKTAN SİĞİN': '21070001004',
+            'ARDA ALTUNHAN': '21070001051',
+            'EKREM TEMEL': '21070001070',
+            'NESRİN ŞENTÜRK': '21070002005',
+            'BATUHAN ŞİŞMAN': '21070002025',
+            'KIVANÇ EFE ERGÖNÜL': '21070005027',
+            'OĞUZ KOYUCAN': '21070005030',
+            'ZEYNEP ARSLANBUĞA': '21070005042',
+            'BESTE TEKİN': '21070007001',
+            'EKİN ALTUNKAYA': '21070007004',
+            'EMRE ERİŞİR': '21070008009',
+            'İSMAİL CANBERK DEMİRKAN': '21070008014',
+            'CAN GİRGİN': '21070008016',
+            'KEREM EROĞLU': '21070008017',
+            'ARMAĞAN SOYLU': '21070008027',
+            'ALP SERKAN MERKİT': '21070008033',
+            'ATAKAN DİNÇER': '21070008034',
+            'DEMET BÜYÜKTAŞ': '21070008206',
+            'GÜRKAN EROĞLU': '22070001041',
+            'EMRE EFE YÜKSEL': '22070001055',
+            'SÜLEYMAN BATU SARI': '22070002015',
+            'KADİR EMRE GÜNEŞ': '22070002047',
+            'TOPRAK TUNCER': '22070005040',
+            'EMRE CAN HEKİMOĞLU': '22070005053',
+            'ILGAR ŞENOL': '22070007014',
+            'EDA NUR ÇALIŞKAN': '22070008017',
+            'SAMİ BERK ŞAHİN': '22070008021',
+            'DENİZ ÜNVER': '22070008026',
+            'AYKAN KANLI': '22070008034',
+            'DENİZ KARATEPE': '22070008043',
+            'AYŞEGÜL KARINYARICI': '22070003022',
+            'AHMET ÖZGÜR KORKMAZ': '21070001046'
         };
 
-        let sessionTimer = null;
-        let reportUpdateTimer = null;
         let attendanceData = {};
 
         function hideAllScreens() {
-            ['teacherLogin', 'teacherPanel', 'studentLogin'].forEach(id => {
+            ['teacherLogin', 'teacherPanel', 'reportScreen', 'studentLogin'].forEach(id => {
                 document.getElementById(id).classList.add('hidden');
             });
         }
@@ -327,81 +417,75 @@
             if (username === TEACHER_USERNAME && password === TEACHER_PASSWORD) {
                 hideAllScreens();
                 document.getElementById('teacherPanel').classList.remove('hidden');
-                initTeacherPanel();
+                generateAllQRCodes();
             } else {
                 alert('❌ Hatalı kullanıcı adı veya şifre!');
             }
         }
 
-        function initTeacherPanel() {
-            const selector = document.getElementById('weekSelector');
-            selector.innerHTML = '';
-            for (let i = 1; i <= MAX_WEEKS; i++) {
-                const option = document.createElement('option');
-                option.value = i;
-                option.textContent = `Hafta ${i}`;
-                selector.appendChild(option);
+        function generateAllQRCodes() {
+            const grid = document.getElementById('qrGrid');
+            grid.innerHTML = '';
+
+            for (let week = 1; week <= MAX_WEEKS; week++) {
+                const card = document.createElement('div');
+                card.className = 'qr-card';
+                
+                const title = document.createElement('h3');
+                title.textContent = `Hafta ${week}`;
+                
+                const qrWrapper = document.createElement('div');
+                qrWrapper.className = 'qr-wrapper';
+                qrWrapper.id = `qr-week-${week}`;
+                
+                const downloadBtn = document.createElement('button');
+                downloadBtn.className = 'download-btn';
+                downloadBtn.textContent = '📥 QR İndir';
+                downloadBtn.onclick = () => downloadQR(week);
+                
+                const urlDisplay = document.createElement('div');
+                urlDisplay.style.cssText = 'margin-top: 10px; font-size: 11px; color: #9aa0a6; word-break: break-all;';
+                const studentUrl = `${window.location.origin}${window.location.pathname}?week=${week}`;
+                urlDisplay.textContent = studentUrl;
+                
+                card.appendChild(title);
+                card.appendChild(qrWrapper);
+                card.appendChild(downloadBtn);
+                card.appendChild(urlDisplay);
+                grid.appendChild(card);
+
+                const qrData = `${window.location.protocol}//${window.location.host}${window.location.pathname}?week=${week}`;
+                
+                new QRCode(qrWrapper, {
+                    text: qrData,
+                    width: 200,
+                    height: 200,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
             }
         }
 
-        function toggleSession() {
-            const sessionBtn = document.getElementById('sessionBtn');
-            if (sessionBtn.dataset.active === 'true') {
-                stopSession();
-            } else {
-                startSession();
+        function downloadQR(week) {
+            const canvas = document.querySelector(`#qr-week-${week} canvas`);
+            if (canvas) {
+                const link = document.createElement('a');
+                link.download = `ENGR4451_Hafta_${week}_QR.png`;
+                link.href = canvas.toDataURL();
+                link.click();
             }
         }
 
-        function startSession() {
-            const week = document.getElementById('weekSelector').value;
-            const sessionStartTime = Date.now();
-
-            const qrData = `${window.location.href.split('?')[0]}?week=${week}&session=${sessionStartTime}`;
-            
-            document.getElementById('qrcode').innerHTML = '';
-            new QRCode(document.getElementById('qrcode'), {
-                text: qrData,
-                width: 300,
-                height: 300
-            });
-
-            document.getElementById('qrSection').classList.remove('hidden');
-            const sessionBtn = document.getElementById('sessionBtn');
-            sessionBtn.textContent = '⏹️ Oturumu Durdur';
-            sessionBtn.style.background = '#ea4335';
-            sessionBtn.dataset.active = 'true';
-            document.getElementById('weekSelector').disabled = true;
-
-            const endTime = sessionStartTime + SESSION_DURATION_MINUTES * 60 * 1000;
-            sessionTimer = setInterval(() => {
-                const now = Date.now();
-                const remaining = endTime - now;
-                if (remaining <= 0) {
-                    stopSession();
-                } else {
-                    const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-                    const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
-                    document.getElementById('sessionCountdown').textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                }
-            }, 1000);
-            
+        function viewReport() {
+            hideAllScreens();
+            document.getElementById('reportScreen').classList.remove('hidden');
             generateReport();
-            reportUpdateTimer = setInterval(generateReport, 5000);
         }
 
-        function stopSession() {
-            clearInterval(sessionTimer);
-            clearInterval(reportUpdateTimer);
-            
-            document.getElementById('qrSection').classList.add('hidden');
-            document.getElementById('qrcode').innerHTML = '';
-            
-            const sessionBtn = document.getElementById('sessionBtn');
-            sessionBtn.textContent = '🚀 Oturumu Başlat';
-            sessionBtn.style.background = '#8ab4f8';
-            sessionBtn.dataset.active = 'false';
-            document.getElementById('weekSelector').disabled = false;
+        function backToPanel() {
+            hideAllScreens();
+            document.getElementById('teacherPanel').classList.remove('hidden');
         }
 
         async function submitAttendance() {
@@ -409,7 +493,6 @@
             const number = document.getElementById('studentNumber').value.trim();
             const urlParams = new URLSearchParams(window.location.search);
             const week = urlParams.get('week');
-            const session = urlParams.get('session');
 
             const submitBtn = document.getElementById('submitAttendanceBtn');
             submitBtn.disabled = true;
@@ -421,15 +504,6 @@
                 submitBtn.textContent = '✅ Yoklamayı Onayla';
                 return;
             }
-
-            const sessionStartTime = parseInt(session, 10);
-            const sessionEndTime = sessionStartTime + SESSION_DURATION_MINUTES * 60 * 1000;
-            if (Date.now() > sessionEndTime) {
-                showResult('❌ Oturum süresi dolduğu için yoklama alınamadı.', 'fail');
-                submitBtn.disabled = false;
-                submitBtn.textContent = '✅ Yoklamayı Onayla';
-                return;
-            }
             
             try {
                 showResult('📍 Konumunuz doğrulanıyor, lütfen bekleyin...', 'info');
@@ -437,7 +511,7 @@
 
                 showResult('👤 Bilgileriniz kontrol ediliyor...', 'info');
                 if (STUDENT_DATABASE[name] !== number) {
-                    throw new Error('Kullanıcı adı (Ad Soyad) veya şifre (Okul No) hatalı.');
+                    throw new Error('Ad Soyad veya Okul Numarası hatalı.');
                 }
 
                 const weekKey = `week${week}`;
@@ -449,7 +523,7 @@
                 
                 attendanceData[weekKey].push({ name, number, timestamp: Date.now() });
                 showResult(`✅ ${name}, Hafta ${week} yoklamanız başarıyla alındı!`, 'success');
-                submitBtn.textContent = 'BAŞARILI';
+                submitBtn.textContent = 'BAŞARILI ✓';
 
             } catch (error) {
                 showResult(`❌ Hata: ${error.message || error}`, 'fail');
@@ -538,7 +612,7 @@
             hideAllScreens();
             const urlParams = new URLSearchParams(window.location.search);
             
-            if (urlParams.has('week') && urlParams.has('session')) {
+            if (urlParams.has('week')) {
                 document.getElementById('studentLogin').classList.remove('hidden');
                 document.getElementById('weekInfo').textContent = urlParams.get('week');
             } else {
