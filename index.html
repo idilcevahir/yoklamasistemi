@@ -247,18 +247,34 @@
         <div id="teacherPanel" class="hidden">
             <div class="header">
                 <div class="course-title">QR Kod Yönetimi</div>
-                <div class="course-subtitle">Her hafta için ayrı QR kodlar</div>
+                <div class="course-subtitle">Hafta seçin ve QR kodu gösterin</div>
             </div>
 
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-                    <h3 style="font-size: 24px; font-weight: 600;">📱 14 Haftalık QR Kodlar</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 20px;">
+                    <h3 style="font-size: 24px; font-weight: 600;">📱 Hafta Seçimi</h3>
                     <button class="btn-primary" onclick="viewReport()" style="width: auto; padding: 12px 32px;">
                         📊 Raporu Görüntüle
                     </button>
                 </div>
 
-                <div class="qr-grid" id="qrGrid"></div>
+                <div style="margin-bottom: 30px;">
+                    <label style="display: block; margin-bottom: 12px; color: #9aa0a6; font-size: 16px;">Hafta Numarası Seçin:</label>
+                    <select id="weekSelector" class="input-field" onchange="generateSelectedWeekQR()" style="cursor: pointer;">
+                        <option value="">Hafta seçiniz...</option>
+                    </select>
+                </div>
+
+                <div id="selectedQRContainer" class="hidden" style="text-align: center;">
+                    <div style="background: #383838; border-radius: 20px; padding: 40px; display: inline-block;">
+                        <h3 style="color: #8ab4f8; font-size: 32px; margin-bottom: 30px;" id="selectedWeekTitle"></h3>
+                        <div class="qr-wrapper" id="selectedQRCode" style="background: white; padding: 30px; border-radius: 16px; margin-bottom: 20px;"></div>
+                        <button class="download-btn" onclick="downloadSelectedQR()" style="display: inline-block; background: #8ab4f8; color: #1f1f1f; border: none; border-radius: 12px; padding: 12px 32px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px;">
+                            📥 QR Kodu İndir
+                        </button>
+                        <div style="margin-top: 20px; font-size: 12px; color: #9aa0a6; word-break: break-all; max-width: 400px; margin-left: auto; margin-right: auto;" id="selectedWeekURL"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -315,7 +331,7 @@
         const PASS_PERCENTAGE = 70;
 
         const YASAR_UNIVERSITY_COORDS = { latitude: 38.4313, longitude: 27.2081 };
-        const MAX_DISTANCE_METERS = 500;
+        const MAX_DISTANCE_METERS = 200;
 
         const STUDENT_DATABASE = {
             'İBRAHİM GÜLTEKİN': '18070003013',
@@ -363,6 +379,7 @@
         };
 
         let attendanceData = {};
+        let currentSelectedWeek = null;
 
         function hideAllScreens() {
             ['teacherLogin', 'teacherPanel', 'reportScreen', 'studentLogin'].forEach(id => {
@@ -417,61 +434,61 @@
             if (username === TEACHER_USERNAME && password === TEACHER_PASSWORD) {
                 hideAllScreens();
                 document.getElementById('teacherPanel').classList.remove('hidden');
-                generateAllQRCodes();
+                populateWeekSelector();
             } else {
                 alert('❌ Hatalı kullanıcı adı veya şifre!');
             }
         }
 
-        function generateAllQRCodes() {
-            const grid = document.getElementById('qrGrid');
-            grid.innerHTML = '';
-
-            for (let week = 1; week <= MAX_WEEKS; week++) {
-                const card = document.createElement('div');
-                card.className = 'qr-card';
-                
-                const title = document.createElement('h3');
-                title.textContent = `Hafta ${week}`;
-                
-                const qrWrapper = document.createElement('div');
-                qrWrapper.className = 'qr-wrapper';
-                qrWrapper.id = `qr-week-${week}`;
-                
-                const downloadBtn = document.createElement('button');
-                downloadBtn.className = 'download-btn';
-                downloadBtn.textContent = '📥 QR İndir';
-                downloadBtn.onclick = () => downloadQR(week);
-                
-                const urlDisplay = document.createElement('div');
-                urlDisplay.style.cssText = 'margin-top: 10px; font-size: 11px; color: #9aa0a6; word-break: break-all;';
-                const studentUrl = `${window.location.origin}${window.location.pathname}?week=${week}`;
-                urlDisplay.textContent = studentUrl;
-                
-                card.appendChild(title);
-                card.appendChild(qrWrapper);
-                card.appendChild(downloadBtn);
-                card.appendChild(urlDisplay);
-                grid.appendChild(card);
-
-                const qrData = `${window.location.protocol}//${window.location.host}${window.location.pathname}?week=${week}`;
-                
-                new QRCode(qrWrapper, {
-                    text: qrData,
-                    width: 200,
-                    height: 200,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.H
-                });
+        function populateWeekSelector() {
+            const selector = document.getElementById('weekSelector');
+            selector.innerHTML = '<option value="">Hafta seçiniz...</option>';
+            
+            for (let i = 1; i <= MAX_WEEKS; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `Hafta ${i}`;
+                selector.appendChild(option);
             }
         }
 
-        function downloadQR(week) {
-            const canvas = document.querySelector(`#qr-week-${week} canvas`);
+        function generateSelectedWeekQR() {
+            const weekNum = document.getElementById('weekSelector').value;
+            
+            if (!weekNum) {
+                document.getElementById('selectedQRContainer').classList.add('hidden');
+                return;
+            }
+
+            currentSelectedWeek = weekNum;
+            
+            document.getElementById('selectedWeekTitle').textContent = `Hafta ${weekNum}`;
+            
+            const qrContainer = document.getElementById('selectedQRCode');
+            qrContainer.innerHTML = '';
+            
+            const qrData = `${window.location.protocol}//${window.location.host}${window.location.pathname}?week=${weekNum}`;
+            
+            new QRCode(qrContainer, {
+                text: qrData,
+                width: 300,
+                height: 300,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            document.getElementById('selectedWeekURL').textContent = qrData;
+            document.getElementById('selectedQRContainer').classList.remove('hidden');
+        }
+
+        function downloadSelectedQR() {
+            if (!currentSelectedWeek) return;
+            
+            const canvas = document.querySelector('#selectedQRCode canvas');
             if (canvas) {
                 const link = document.createElement('a');
-                link.download = `ENGR4451_Hafta_${week}_QR.png`;
+                link.download = `ENGR4451_Hafta_${currentSelectedWeek}_QR.png`;
                 link.href = canvas.toDataURL();
                 link.click();
             }
