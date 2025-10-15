@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGR 4451 - Konum Tabanlı E-Yoklama</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        /* Stil kodlarınız burada... (değişiklik yok) */
+        @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap');
+        * { font-family: 'Google Sans', 'Segoe UI', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1f1f1f; color: #e3e3e3; min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+        .header { text-align: center; margin-bottom: 60px; }
+        .course-title { font-size: 56px; font-weight: 700; background: linear-gradient(90deg, #8ab4f8 0%, #c58af9 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 10px; }
+        .course-subtitle { font-size: 20px; color: #9aa0a6; }
+        .card { background: #2b2b2b; border-radius: 24px; padding: 40px; border: 1px solid #3d3d3d; }
+        .input-field { background: #383838; border: 1px solid #5f6368; border-radius: 12px; padding: 16px 20px; color: #e3e3e3; width: 100%; font-size: 16px; transition: all 0.2s; }
+        .btn-primary { background: #8ab4f8; color: #1f1f1f; border: none; border-radius: 24px; padding: 16px 40px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; width: 100%; }
+        .btn-primary:disabled { background: #5f6368; color: #9aa0a6; cursor: not-allowed; }
+        .pass-badge { background: #34a853; color: white; padding: 8px 20px; border-radius: 24px; font-size: 14px; font-weight: 600; }
+        .fail-badge { background: #ea4335; color: white; padding: 8px 20px; border-radius: 24px; font-size: 14px; font-weight: 600; }
+        .hidden { display: none !important; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #383838; padding: 16px; text-align: left; color: #8ab4f8; font-weight: 600; border-bottom: 2px solid #5f6368; }
+        td { padding: 16px; border-bottom: 1px solid #3d3d3d; }
+        tr:hover { background: #2b2b2b; }
+    </style>
+</head>
+<body>
+    <div class="container"></div>
+
+    <script>
+        const TEACHER_USERNAME = 'orkun Karabaşoğlu';
+        const TEACHER_PASSWORD = 'orkun.karabasoglu';
+        const MAX_WEEKS = 14;
+        const PASS_PERCENTAGE = 70;
+        const YASAR_UNIVERSITY_COORDS = { latitude: 38.4313, longitude: 27.2081 };
+        
+        // Yüksek hassasiyetli GPS sapmalarını tolere etmek için yarıçapı makul bir seviyede tutalım.
+        const MAX_DISTANCE_METERS = 500; 
+
+        // Öğrenci listeniz burada... (değişiklik yok)
+        const STUDENT_DATABASE = { /* ... Sizin öğrenci listeniz ... */ };
+
+        function getAttendanceData() { try { return JSON.parse(localStorage.getItem('attendanceData_ENGR4451') || '{}'); } catch { return {}; } }
+        function saveAttendanceData(data) { localStorage.setItem('attendanceData_ENGR4451', JSON.stringify(data)); }
+        function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) { const R = 6371e3; const dLat = (lat2 - lat1) * Math.PI / 180; const dLon = (lon2 - lon1) * Math.PI / 180; const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2); const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); return R * c; }
+
+        // ******** ÖNEMLİ DEĞİŞİKLİK BURADA ********
+        function verifyLocation() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    return reject('Tarayıcınız konum servisini desteklemiyor.');
+                }
+
+                // Yüksek hassasiyet ayarları
+                const options = {
+                    enableHighAccuracy: true, // Cihazın GPS çipini ve diğer sensörleri kullanmaya zorla
+                    timeout: 15000,           // Konumun bulunması için 15 saniye bekle
+                    maximumAge: 0             // Eski, önbellekteki konumu kullanma, yenisini bul
+                };
+
+                navigator.geolocation.getCurrentPosition(
+                    // Başarılı olursa...
+                    position => {
+                        const { latitude, longitude } = position.coords;
+                        const distance = getDistanceFromLatLonInMeters(latitude, longitude, YASAR_UNIVERSITY_COORDS.latitude, YASAR_UNIVERSITY_COORDS.longitude);
+                        
+                        if (distance <= MAX_DISTANCE_METERS) {
+                            resolve(); // Başarılı, öğrenci kampüs içinde.
+                        } else {
+                            reject(`Kampüs dışında olduğunuz için yoklama alınamadı. (Hassas Konum: ${distance.toFixed(0)}m)`);
+                        }
+                    },
+                    // Başarısız olursa...
+                    () => reject('Hassas konum bilgisi alınamadı. Cihazınızın konum servislerinin açık olduğundan ve tarayıcıya izin verdiğinizden emin olun.'),
+                    // Ayarları uygula
+                    options
+                );
+            });
+        }
+        
+        // Geri kalan tüm fonksiyonlar (teacherLogin, submitAttendance vb.) aynı kalabilir.
+        // submitAttendance fonksiyonu artık bu yeni, daha güvenilir verifyLocation'ı kullanacak.
+        // ... (Kodu tam olarak kopyaladığınızda bu kısımlar da gelecektir)
+
+    </script>
+</body>
+</html>
