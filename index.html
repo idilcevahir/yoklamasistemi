@@ -44,6 +44,11 @@
         @media (max-width: 768px) {
             .qr-section { grid-template-columns: 1fr; }
             .dynamic-code { font-size: 80px; letter-spacing: 10px; }
+            .card { padding: 20px; }
+            body { padding: 10px; }
+            h1 { font-size: 24px; }
+            .input-field { font-size: 14px; padding: 12px; }
+            #sCode { font-size: 24px !important; letter-spacing: 5px !important; }
         }
     </style>
 </head>
@@ -204,6 +209,14 @@
             if (codeInterval) clearInterval(codeInterval);
             if (countdownInterval) clearInterval(countdownInterval);
             
+            // Hafta tarihleri - Her Salı
+            const weekDates = [
+                '30.09.2025', '07.10.2025', '14.10.2025', '21.10.2025',
+                '28.10.2025', '04.11.2025', '11.11.2025', '18.11.2025',
+                '25.11.2025', '02.12.2025', '09.12.2025', '16.12.2025',
+                '23.12.2025', '30.12.2025'
+            ];
+            
             const stats = {};
             Object.entries(STUDENTS).forEach(([n, num]) => stats[num] = {name: n, weeks: []});
             for (let i = 1; i <= MAX_WEEKS; i++) {
@@ -214,23 +227,34 @@
             let total = 0, pass = 0, fail = 0;
             Object.values(stats).forEach(s => {
                 total += s.weeks.length;
-                ((s.weeks.length / MAX_WEEKS * 100) >= PASS_PERCENT) ? pass++ : fail++;
+                const absent = MAX_WEEKS - s.weeks.length;
+                (absent <= 4) ? pass++ : fail++;
             });
             document.getElementById('reportStats').innerHTML = `
                 <div class="stats">
-                    <div class="stat-box"><div class="stat-num">${Object.keys(stats).length}</div><div class="stat-label">Toplam</div></div>
+                    <div class="stat-box"><div class="stat-num">${Object.keys(stats).length}</div><div class="stat-label">Toplam Öğrenci</div></div>
                     <div class="stat-box"><div class="stat-num">${pass}</div><div class="stat-label">Geçen</div></div>
                     <div class="stat-box"><div class="stat-num">${fail}</div><div class="stat-label">Kalan</div></div>
-                    <div class="stat-box"><div class="stat-num">${(total / (Object.keys(stats).length * MAX_WEEKS) * 100).toFixed(1)}%</div><div class="stat-label">Ortalama</div></div>
+                    <div class="stat-box"><div class="stat-num">${(total / (Object.keys(stats).length * MAX_WEEKS) * 100).toFixed(1)}%</div><div class="stat-label">Ortalama Devam</div></div>
+                </div>
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3 style="color: #333; margin-bottom: 15px;">📅 Ders Tarihleri (Salı Günleri)</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                        ${weekDates.map((date, i) => `<div style="background: white; padding: 10px; border-radius: 8px; text-align: center;">
+                            <strong>Hafta ${i + 1}</strong><br>${date}
+                        </div>`).join('')}
+                    </div>
                 </div>`;
-            let html = '<table><thead><tr><th>No</th><th>Ad Soyad</th><th>Katılım</th><th>Oran</th><th>Haftalar</th><th>Durum</th></tr></thead><tbody>';
+            let html = '<table><thead><tr><th>No</th><th>Ad Soyad</th><th>Katılım</th><th>Devamsızlık</th><th>Oran</th><th>Haftalar</th><th>Durum</th></tr></thead><tbody>';
             Object.entries(stats).sort((a,b) => a[0].localeCompare(b[0])).forEach(([num, s]) => {
                 const att = s.weeks.length;
+                const abs = MAX_WEEKS - att;
                 const per = (att / MAX_WEEKS * 100).toFixed(1);
+                const passed = abs <= 4;
                 const weeks = Array.from({length: MAX_WEEKS}, (_, i) => i + 1).map(i => 
                     `<span class="week-badge week-${s.weeks.includes(i) ? 'present' : 'absent'}">${i}</span>`
                 ).join('');
-                html += `<tr><td>${num}</td><td>${s.name}</td><td>${att}/${MAX_WEEKS}</td><td>${per}%</td><td>${weeks}</td><td>${per >= PASS_PERCENT ? '<span class="badge-pass">✓ Geçti</span>' : '<span class="badge-fail">✗ Kaldı</span>'}</td></tr>`;
+                html += `<tr><td>${num}</td><td>${s.name}</td><td>${att}/${MAX_WEEKS}</td><td><strong>${abs}</strong></td><td>${per}%</td><td>${weeks}</td><td>${passed ? '<span class="badge-pass">✓ Geçti</span>' : '<span class="badge-fail">✗ Kaldı</span>'}</td></tr>`;
             });
             document.getElementById('reportTable').innerHTML = html + '</tbody></table>';
         }
@@ -301,29 +325,21 @@
             for (let i = 1; i <= MAX_WEEKS; i++) {
                 if (data[`week${i}`]?.some(s => s.number === num)) weeks.push(i);
             }
-            const att = weeks.length, abs = MAX_WEEKS - att, per = (att / MAX_WEEKS * 100).toFixed(1);
-            const rem = Math.floor(MAX_WEEKS * (100 - PASS_PERCENT) / 100) - abs;
-            const weekBadges = Array.from({length: MAX_WEEKS}, (_, i) => i + 1).map(i => 
-                `<span class="week-badge week-${weeks.includes(i) ? 'present' : 'absent'}">${i}</span>`
-            ).join('');
+            const att = weeks.length;
+            const abs = MAX_WEEKS - att;
+            const maxAbsent = 4; // Maksimum devamsızlık hakkı
+            const remaining = maxAbsent - abs;
             
             let status = '';
-            if (per >= PASS_PERCENT) status = '<div class="alert alert-success">✅ GEÇTİNİZ! (% ' + per + ')</div>';
-            else if (rem > 0) status = `<div class="alert alert-warning">⚠️ DİKKAT! ${rem} hafta hakkınız kaldı</div>`;
-            else status = '<div class="alert alert-danger">❌ KALDINIZ! Limit aşıldı</div>';
+            if (remaining >= 0) {
+                status = `<div class="alert alert-${remaining > 1 ? 'success' : 'warning'}" style="font-size: 24px; padding: 30px;">
+                    🎯 Kalan Devamsızlık Hakkınız: <strong>${remaining}</strong> hafta
+                </div>`;
+            } else {
+                status = '<div class="alert alert-danger" style="font-size: 24px; padding: 30px;">❌ Devamsızlık hakkınız kalmadı!</div>';
+            }
             
-            document.getElementById('studentStats').innerHTML = `
-                <div class="stats" style="margin-top: 30px;">
-                    <div class="stat-box"><div class="stat-num">${att}</div><div class="stat-label">Katılım</div></div>
-                    <div class="stat-box" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"><div class="stat-num">${abs}</div><div class="stat-label">Devamsız</div></div>
-                    <div class="stat-box" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"><div class="stat-num">${per}%</div><div class="stat-label">Oran</div></div>
-                    <div class="stat-box" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);"><div class="stat-num">${rem >= 0 ? rem : 0}</div><div class="stat-label">Kalan Hak</div></div>
-                </div>
-                <div style="margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
-                    <h3 style="margin-bottom: 10px; color: #333;">Haftalık Durum:</h3>
-                    ${weekBadges}
-                </div>
-                ${status}`;
+            document.getElementById('studentStats').innerHTML = status;
             document.getElementById('studentStats').classList.remove('hidden');
         }
 
@@ -332,7 +348,7 @@
         }
 
         function exportCSV() {
-            let csv = 'No,Ad Soyad,Katılım,Oran,Durum,Haftalar\n';
+            let csv = 'No,Ad Soyad,Katılım,Devamsızlık,Oran,Durum,Haftalar\n';
             const stats = {};
             Object.entries(STUDENTS).forEach(([n, num]) => stats[num] = {name: n, weeks: []});
             for (let i = 1; i <= MAX_WEEKS; i++) {
@@ -341,8 +357,11 @@
                 });
             }
             Object.entries(stats).forEach(([num, s]) => {
-                const per = (s.weeks.length / MAX_WEEKS * 100).toFixed(1);
-                csv += `"${num}","${s.name}","${s.weeks.length}/${MAX_WEEKS}","${per}%","${per >= PASS_PERCENT ? 'Geçti' : 'Kaldı'}","${s.weeks.join('-')}"\n`;
+                const att = s.weeks.length;
+                const abs = MAX_WEEKS - att;
+                const per = (att / MAX_WEEKS * 100).toFixed(1);
+                const passed = abs <= 4 ? 'Geçti' : 'Kaldı';
+                csv += `"${num}","${s.name}","${att}/${MAX_WEEKS}","${abs}","${per}%","${passed}","${s.weeks.join('-')}"\n`;
             });
             const blob = new Blob(['\ufeff' + csv], {type: 'text/csv;charset=utf-8;'});
             const link = document.createElement('a');
